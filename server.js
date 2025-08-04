@@ -75,82 +75,6 @@ app.use('/api/users', userRoutes);
 
 /**
  * @swagger
- * /health:
- *   get:
- *     summary: Health check endpoint
- *     tags: [System]
- *     responses:
- *       200:
- *         description: Server is running successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: "Server is running successfully"
- *                 timestamp:
- *                   type: string
- *                   format: date-time
- *                 environment:
- *                   type: string
- *                   example: "development"
- */
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Server is running successfully',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV
-  });
-});
-
-/**
- * @swagger
- * /test-email:
- *   get:
- *     summary: Test email configuration
- *     tags: [System]
- *     responses:
- *       200:
- *         description: Email configuration test result
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- */
-app.get('/test-email', async (req, res) => {
-  try {
-    const isValid = await testEmailConfig();
-    res.status(200).json({
-      success: isValid,
-      message: isValid ? 'Email configuration is valid' : 'Email configuration has issues',
-      config: {
-        host: process.env.SMTP_HOST,
-        port: process.env.SMTP_PORT,
-        from: process.env.FROM_EMAIL
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error testing email configuration',
-      error: error.message
-    });
-  }
-});
-
-/**
- * @swagger
  * /send-test-email:
  *   post:
  *     summary: Send a test email
@@ -209,6 +133,43 @@ app.post('/send-test-email', async (req, res) => {
     });
   }
 });
+
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: Health check endpoint
+ *     tags: [System]
+ *     responses:
+ *       200:
+ *         description: Server is running successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Server is running successfully"
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                 environment:
+ *                   type: string
+ *                   example: "development"
+ */
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Server is running successfully',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV
+  });
+});
+
 
 /**
  * @swagger
@@ -285,43 +246,6 @@ app.get('/', (req, res) => {
       }
     }
   });
-});
-
-// Debug email configuration endpoint
-app.get('/debug-email-config', async (req, res) => {
-  try {
-    console.log('🔍 Debugging email configuration...');
-    console.log('SMTP_HOST:', process.env.SMTP_HOST);
-    console.log('SMTP_PORT:', process.env.SMTP_PORT);
-    console.log('SMTP_SECURE:', process.env.SMTP_SECURE);
-    console.log('SMTP_USER:', process.env.SMTP_USER);
-    console.log('FROM_EMAIL:', process.env.FROM_EMAIL);
-    console.log('FROM_NAME:', process.env.FROM_NAME);
-    
-    const isValid = await testEmailConfig();
-    
-    res.status(200).json({
-      success: isValid,
-      message: isValid ? 'Email configuration is valid' : 'Email configuration has issues',
-      config: {
-        host: process.env.SMTP_HOST,
-        port: process.env.SMTP_PORT,
-        secure: process.env.SMTP_SECURE,
-        user: process.env.SMTP_USER,
-        from: process.env.FROM_EMAIL,
-        fromName: process.env.FROM_NAME
-      },
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('❌ Debug email config error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error debugging email configuration',
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
-  }
 });
 
 // 404 handler
