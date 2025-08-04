@@ -4,7 +4,8 @@ const {
   getPostById,
   createPost,
   updatePost,
-  deletePost
+  deletePost,
+  exportPostsToCSV
 } = require('../controllers/postController');
 const verifyToken = require('../middleware/auth');
 const { upload, handleMulterError } = require('../middleware/upload');
@@ -349,5 +350,80 @@ router.put('/:id',
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.delete('/:id', verifyToken, deletePost);
+
+/**
+ * @swagger
+ * /api/posts/export/csv:
+ *   get:
+ *     summary: Export posts to CSV file (requires authentication)
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *           enum: [tech, lifestyle, business, education, health, entertainment, other]
+ *         description: Filter by category
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search in title and content
+ *       - in: query
+ *         name: author
+ *         schema:
+ *           type: string
+ *         description: Filter by author ID (Admin only)
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date for date range filter (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date for date range filter (YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: CSV file downloaded successfully
+ *         content:
+ *           text/csv:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *         headers:
+ *           Content-Disposition:
+ *             description: Attachment filename
+ *             schema:
+ *               type: string
+ *               example: 'attachment; filename="posts_export_2024-01-01T12-00-00-000Z.csv"'
+ *       401:
+ *         description: Unauthorized - invalid or missing token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: No posts found for export
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "No posts found for export"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/export/csv', verifyToken, exportPostsToCSV);
 
 module.exports = router;

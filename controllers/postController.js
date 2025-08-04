@@ -2,6 +2,7 @@ const Post = require('../models/Post');
 const postEmitter = require('../events/postEvents');
 const path = require('path');
 const fs = require('fs');
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 
 // Cache helper functions (assuming Redis client is available globally)
 let redisClient = null;
@@ -205,14 +206,15 @@ const createPost = async (req, res) => {
     await newPost.save();
 
     // Populate author information
-    await newPost.populate('author', 'username');
-
-    // Emit post created event
+    await newPost.populate('author', 'username');    // Emit post created event with full post data
     postEmitter.emit('post:created', {
+      _id: newPost._id,
       title: newPost.title,
-      author: newPost.author,
+      content: newPost.content,
       category: newPost.category,
-      id: newPost._id
+      thumbnail: newPost.thumbnail,
+      createdAt: newPost.createdAt,
+      author: newPost.author
     });
 
     // Clear relevant cache
@@ -397,11 +399,156 @@ const deletePost = async (req, res) => {
   }
 };
 
+// Export posts to CSV
+const exportPostsToCSV = async (req, res) => {
+  try {
+    const {
+      category,
+      search,
+      author,
+      startDate,
+      endDate
+    } = req.query;
+
+    // Build query based on user role
+    let query = {};
+    
+    // If user is not admin, only export their own posts
+    if (req.user.role !== 'admin') {
+      query.author = req.user._id;
+    }
+    
+    // Add optional filters
+    if (category && category !== 'all') {
+      query.category = category;
+    }
+    
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { content: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    if (author && req.user.role === 'admin') {
+      query.author = author;
+    }
+    
+    // Date range filter
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    // Fetch posts
+    const posts = await Post.find(query)
+      .populate('author', 'username fullName email')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (posts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No posts found for export'
+      });
+    }
+
+    // Create exports directory if it doesn't exist
+    const exportsDir = path.join(__dirname, '../exports');
+    if (!fs.existsSync(exportsDir)) {
+      fs.mkdirSync(exportsDir, { recursive: true });
+    }
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `posts_export_${timestamp}.csv`;
+    const filepath = path.join(exportsDir, filename);
+
+    // Define CSV header
+    const csvWriter = createCsvWriter({
+      path: filepath,
+      header: [
+        { id: 'id', title: 'ID' },
+        { id: 'title', title: 'Title' },
+        { id: 'content', title: 'Content' },
+        { id: 'category', title: 'Category' },
+        { id: 'authorUsername', title: 'Author Username' },
+        { id: 'authorFullName', title: 'Author Full Name' },
+        { id: 'authorEmail', title: 'Author Email' },
+        { id: 'thumbnail', title: 'Thumbnail' },
+        { id: 'createdAt', title: 'Created At' },
+        { id: 'updatedAt', title: 'Updated At' }
+      ]
+    });
+
+    // Prepare data for CSV
+    const csvData = posts.map(post => ({
+      id: post._id.toString(),
+      title: post.title,
+      content: post.content.replace(/\n/g, ' ').replace(/,/g, ';'), // Clean content for CSV
+      category: post.category,
+      authorUsername: post.author?.username || 'Unknown',
+      authorFullName: post.author?.fullName || 'N/A',
+      authorEmail: post.author?.email || 'N/A',
+      thumbnail: post.thumbnail || 'N/A',
+      createdAt: new Date(post.createdAt).toISOString(),
+      updatedAt: new Date(post.updatedAt).toISOString()
+    }));
+
+    // Write to CSV
+    await csvWriter.writeRecords(csvData);
+
+    // Log export activity
+    console.log(`📊 Posts exported to CSV by user: ${req.user.username}, Posts count: ${posts.length}`);
+
+    // Set headers for file download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+
+    // Send file
+    res.download(filepath, filename, (err) => {
+      if (err) {
+        console.error('File download error:', err);
+        return res.status(500).json({
+          success: false,
+          message: 'Error downloading file'
+        });
+      }
+
+      // Clean up file after download (optional - comment out if you want to keep files)
+      setTimeout(() => {
+        try {
+          if (fs.existsSync(filepath)) {
+            fs.unlinkSync(filepath);
+          }
+        } catch (cleanupError) {
+          console.error('File cleanup error:', cleanupError);
+        }
+      }, 5000); // Delete after 5 seconds
+    });
+
+  } catch (error) {
+    console.error('Export posts to CSV error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error exporting posts to CSV',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getAllPosts,
   getPostById,
   createPost,
   updatePost,
   deletePost,
+  exportPostsToCSV,
   setRedisClient
 };

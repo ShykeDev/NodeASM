@@ -105,15 +105,10 @@ A comprehensive Node.js Post Management System with Express, MongoDB, JWT Authen
       license: {
         name: 'MIT',
         url: 'https://opensource.org/licenses/MIT'
-      }
-    },
+      }    },
     servers: [
       {
-        url: 'http://localhost:3000',
-        description: 'Development server'
-      },
-      {
-        url: 'https://api.postmanagement.com',
+        url: 'https://apiasm.vunet.vn',
         description: 'Production server'
       }
     ],

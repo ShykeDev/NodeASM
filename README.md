@@ -108,7 +108,7 @@ API documentation được tích hợp với Swagger UI để cung cấp giao di
 
 #### Truy cập Swagger UI
 ```
-http://localhost:3000/api-docs
+https://apiasm.vunet.vn/api-docs
 ```
 
 #### Tính năng Swagger
@@ -121,7 +121,7 @@ http://localhost:3000/api-docs
 #### Cách sử dụng Swagger UI
 
 1. **Khởi động server**: `npm run dev`
-2. **Mở Swagger UI**: Truy cập `http://localhost:3000/api-docs`
+2. **Mở Swagger UI**: Truy cập `https://apiasm.vunet.vn/api-docs`
 3. **Authentication**:
    - Đăng ký/đăng nhập để lấy JWT token
    - Click vào nút "Authorize" trên Swagger UI
@@ -313,7 +313,7 @@ API documentation đã được tích hợp với Swagger UI để cung cấp gi
 
 ### Truy cập Swagger UI
 ```
-http://localhost:3000/api-docs
+https://apiasm.vunet.vn/api-docs
 ```
 
 ### Tính năng Swagger
@@ -331,7 +331,7 @@ http://localhost:3000/api-docs
 npm run dev
 ```
 
-2. **Mở Swagger UI**: Truy cập `http://localhost:3000/api-docs`
+2. **Mở Swagger UI**: Truy cập `https://apiasm.vunet.vn/api-docs`
 
 3. **Authentication**:
    - Đăng ký/đăng nhập để lấy JWT token

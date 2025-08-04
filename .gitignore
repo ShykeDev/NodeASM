@@ -27,6 +27,9 @@ coverage/
 # Uploads
 uploads/
 
+# Exports
+exports/
+
 # IDE/Editor files
 .vscode/
 .idea/
